@@ -65,7 +65,8 @@ PROGRAM burgers_dynamic
   TYPE(cmfe_BasisType) :: Basis
   TYPE(cmfe_BoundaryConditionsType) :: BoundaryConditions
   TYPE(cmfe_ComputationEnvironmentType) :: computationEnvironment
-  TYPE(cmfe_CoordinateSystemType) :: CoordinateSystem,WorldCoordinateSystem
+  TYPE(cmfe_ContextType) :: context
+  TYPE(cmfe_CoordinateSystemType) :: CoordinateSystem
   TYPE(cmfe_DecompositionType) :: Decomposition
   TYPE(cmfe_EquationsType) :: Equations
   TYPE(cmfe_EquationsSetType) :: EquationsSet
@@ -86,10 +87,15 @@ PROGRAM burgers_dynamic
   INTEGER(CMISSIntg) :: EquationsSetIndex,Err
 
   !Intialise OpenCMISS
-  CALL cmfe_Initialise(WorldCoordinateSystem,WorldRegion,Err)
+  CALL cmfe_Context_Initialise(context,err)
+  CALL cmfe_Initialise(context,err)
+  CALL cmfe_ErrorHandlingModeSet(CMFE_ERRORS_TRAP_ERROR,err)
+  CALL cmfe_Region_Initialise(worldRegion,err)
+  CALL cmfe_Context_WorldRegionGet(context,worldRegion,err)
 
   !Get the computational nodes information
   CALL cmfe_ComputationEnvironment_Initialise(computationEnvironment,err)
+  CALL cmfe_Context_ComputationEnvironmentGet(context,computationEnvironment,err)
   CALL cmfe_ComputationEnvironment_NumberOfWorldNodesGet(computationEnvironment,numberOfComputationalNodes,err)
   CALL cmfe_ComputationEnvironment_WorldNodeNumberGet(computationEnvironment,computationalNodeNumber,err)
 
@@ -140,7 +146,7 @@ PROGRAM burgers_dynamic
 
   !Start the creation of a new RC coordinate system
   CALL cmfe_CoordinateSystem_Initialise(CoordinateSystem,Err)
-  CALL cmfe_CoordinateSystem_CreateStart(CoordinateSystemUserNumber,CoordinateSystem,Err)
+  CALL cmfe_CoordinateSystem_CreateStart(CoordinateSystemUserNumber,context,CoordinateSystem,Err)
   !Set the coordinate system to be 1D
   CALL cmfe_CoordinateSystem_DimensionSet(CoordinateSystem,1,Err)
   !Finish the creation of the coordinate system
@@ -165,7 +171,7 @@ PROGRAM burgers_dynamic
 
   !Start the creation of a basis
   CALL cmfe_Basis_Initialise(Basis,Err)
-  CALL cmfe_Basis_CreateStart(BasisUserNumber,Basis,Err)
+  CALL cmfe_Basis_CreateStart(BasisUserNumber,context,Basis,Err)
   CALL cmfe_Basis_TypeSet(Basis,CMFE_BASIS_LAGRANGE_HERMITE_TP_TYPE,Err)
   CALL cmfe_Basis_NumberOfXiSet(Basis,1,Err)
   !Set the basis xi interpolation and number of Gauss points
@@ -294,7 +300,7 @@ PROGRAM burgers_dynamic
 
   !Create the problem
   CALL cmfe_Problem_Initialise(Problem,Err)
-  CALL cmfe_Problem_CreateStart(ProblemUserNumber,[CMFE_PROBLEM_FLUID_MECHANICS_CLASS,CMFE_PROBLEM_BURGERS_EQUATION_TYPE, &
+  CALL cmfe_Problem_CreateStart(ProblemUserNumber,context,[CMFE_PROBLEM_FLUID_MECHANICS_CLASS,CMFE_PROBLEM_BURGERS_EQUATION_TYPE, &
     & CMFE_PROBLEM_DYNAMIC_BURGERS_SUBTYPE],Problem,Err)
   !Finish the creation of a problem.
   CALL cmfe_Problem_CreateFinish(Problem,Err)
@@ -432,7 +438,7 @@ PROGRAM burgers_dynamic
     CALL cmfe_Fields_Finalise(Fields,Err)
   ENDIF
 
-  CALL cmfe_Finalise(Err)
+  CALL cmfe_Finalise(context,Err)
   WRITE(*,'(A)') "Program successfully completed."
 
 END PROGRAM burgers_dynamic
